@@ -1,18 +1,23 @@
--- =======================================================
---  FLONSY HUB v4.2 (ULTIMATE LUXY EDITION)
---  Сделано для Господина. Бро всегда рядом.
---  Котёнок отомстит, но позже.
--- =======================================================
-
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local root = character:WaitForChild("HumanoidRootPart")
-local cam = workspace.CurrentCamera
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.IgnoreGuiInset = true
 
--- =======================================================
---  ОСНОВНАЯ ЛОГИКА (Твои функции)
--- =======================================================
+local function getChar()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+local function getHumanoid()
+    local c = getChar()
+    return c and c:FindFirstChild("Humanoid")
+end
+
+local function getRoot()
+    local c = getChar()
+    return c and c:FindFirstChild("HumanoidRootPart")
+end
+
 local flying = false
 local noclip = false
 local infJump = false
@@ -22,8 +27,9 @@ local stepDelay = 0.05
 
 local function setNoclip(state)
     noclip = state
-    if character then
-        for _, part in pairs(character:GetDescendants()) do
+    local c = getChar()
+    if c then
+        for _, part in pairs(c:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = not state
             end
@@ -34,13 +40,16 @@ end
 local function toggleFly(state)
     flying = state
     if flying then
+        local root = getRoot()
+        if not root then return end
         local bg = Instance.new("BodyGyro", root)
         bg.P = 9e4
         bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
         local bv = Instance.new("BodyVelocity", root)
         bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
         spawn(function()
-            while flying and root do
+            while flying and root and root.Parent do
+                local cam = workspace.CurrentCamera
                 bg.CFrame = cam.CFrame
                 local dir = Vector3.new()
                 local UIS = game:GetService("UserInputService")
@@ -51,21 +60,22 @@ local function toggleFly(state)
                 bv.Velocity = dir * 100
                 task.wait()
             end
-            bg:Destroy()
-            bv:Destroy()
+            if bg then bg:Destroy() end
+            if bv then bv:Destroy() end
         end)
     end
 end
 
 local function toggleFreeze(state)
     frozen = state
+    local root = getRoot()
     if root then
         if frozen then
             local bv = Instance.new("BodyVelocity", root)
             bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
             bv.Velocity = Vector3.new(0,0,0)
             spawn(function()
-                while frozen and root and bv do
+                while frozen and root and root.Parent and bv do
                     bv.Velocity = Vector3.new(0,0,0)
                     task.wait()
                 end
@@ -80,19 +90,17 @@ local function toggleFreeze(state)
 end
 
 game:GetService("UserInputService").JumpRequest:Connect(function()
-    if infJump and character then
-        character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+    if infJump then
+        local hum = getHumanoid()
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
     end
 end)
 
 -- =======================================================
---  GUI (Luxy Style Full)
+--  ГЛАВНОЕ МЕНЮ
 -- =======================================================
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.IgnoreGuiInset = true
-
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 780, 0, 530)
 mainFrame.Position = UDim2.new(0.5, -390, 0.5, -265)
@@ -102,9 +110,7 @@ mainFrame.Parent = screenGui
 mainFrame.Active = true
 mainFrame.Draggable = true
 
--- =======================================================
---  ШАПКА
--- =======================================================
+-- Шапка
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 55)
 topBar.BackgroundColor3 = Color3.fromRGB(26, 26, 32)
@@ -133,9 +139,7 @@ closeBtn.TextSize = 18
 closeBtn.Parent = topBar
 closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
--- =======================================================
---  САЙДБАР (Левая панель с вкладками)
--- =======================================================
+-- Сайдбар
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 60, 1, -55)
 sidebar.Position = UDim2.new(0, 0, 0, 55)
@@ -196,7 +200,7 @@ btnMain.BackgroundColor3 = Color3.fromRGB(31, 31, 40)
 for _, c in pairs(btnMain:GetChildren()) do if c:IsA("TextLabel") then c.TextColor3 = Color3.fromRGB(255, 255, 255) end end
 
 -- =======================================================
---  УТИЛИТЫ ДЛЯ UI
+--  УТИЛИТЫ UI
 -- =======================================================
 local function clearContent()
     for _, child in pairs(contentFrame:GetChildren()) do
@@ -421,7 +425,7 @@ local function createColumn(parent, xPos)
 end
 
 -- =======================================================
---  ЛОГИКА ОТРИСОВКИ СТРАНИЦ
+--  ОТРИСОВКА СТРАНИЦ
 -- =======================================================
 local function updatePage()
     clearContent()
@@ -433,12 +437,13 @@ local function updatePage()
         createHeader(leftCol, "Farming Station", "🏃")
         createHeader(rightCol, "Treadmill Settings", "🕒")
         
-        -- ЛЕВАЯ
         createRow(leftCol, 45, "Auto Run (Step Farm)", "▶️", false, function(state)
             autoStep = state
             if autoStep then
                 spawn(function()
-                    while autoStep and character do
+                    while autoStep do
+                        local c = getChar()
+                        if not c then break end
                         game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.W, false, game)
                         task.wait(0.02)
                         game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.W, false, game)
@@ -448,7 +453,6 @@ local function updatePage()
             end
         end)
         
-        -- ВЫПАДАШКИ ТЕЛЕПОРТА
         local teleportLocations = {
             ["Spawn Point"] = workspace.SpawnLocation and workspace.SpawnLocation.Position or Vector3.new(0, 5, 0),
             ["Center"] = Vector3.new(0, 10, 0),
@@ -462,6 +466,7 @@ local function updatePage()
         end)
         
         createBlockButton(leftCol, 120, "Teleport To Target", function()
+            local root = getRoot()
             if root and teleportLocations[currentTpTarget] then
                 root.CFrame = CFrame.new(teleportLocations[currentTpTarget])
             end
@@ -471,7 +476,8 @@ local function updatePage()
         createRow(leftCol, 195, "Auto Farm Wins", "🏆", false, function(state) end)
         
         createSlider(leftCol, 230, "Tween Speed (Walk)", 500, 16, function(val)
-            if humanoid then humanoid.WalkSpeed = val end
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = val end
         end)
         
         createRow(leftCol, 280, "Auto Rebirth", "🔄", false, function(state)
@@ -483,16 +489,11 @@ local function updatePage()
         end)
         createRow(leftCol, 315, "Freeze Position", "❄️", false, function(state) toggleFreeze(state) end)
         
-        -- ПРАВАЯ
         createDropdown(rightCol, 45, "Select Treadmill Type", {"Diamond", "Gold", "Silver", "Bronze"}, "Diamond", function(val) end)
-        createBlockButton(rightCol, 90, "Bypass Treadmill Access (Unlock)", function()
-            print("Treadmill bypassed! (Simulated)")
-        end)
+        createBlockButton(rightCol, 90, "Bypass Treadmill Access (Unlock)", function() print("Bypassed!") end)
         createBlockButton(rightCol, 125, "Unlock Infinity Trail", function()
             if game:GetService("ReplicatedStorage"):FindFirstChild("InfinityTrail") then
                 game:GetService("ReplicatedStorage").InfinityTrail:FireServer()
-            else
-                warn("Infinity Trail not found, but we tried!")
             end
         end)
         
@@ -520,14 +521,15 @@ local function updatePage()
         createRow(col, 115, "Inf Jump", "⬆️", false, function(state) infJump = state end)
         createRow(col, 150, "Reset Speed (16)", "⏮️", false, function(state) 
             if state then 
-                if humanoid then humanoid.WalkSpeed = 16 end 
+                local hum = getHumanoid()
+                if hum then hum.WalkSpeed = 16 end
             end 
         end)
     end
 end
 
 -- =======================================================
---  ФУТЕР И ОБНОВЛЕНИЕ
+--  ФУТЕР
 -- =======================================================
 local footer = Instance.new("Frame")
 footer.Size = UDim2.new(1, 0, 0, 30)
@@ -538,4 +540,5 @@ footer.Parent = mainFrame
 
 local footerText = Instance.new("TextLabel")
 footerText.Size = UDim2.new(1, 0, 1, 0)
-footerText.Text = "Flonsy · Speed Keyboard
+footerText.Text = "Flonsy · Speed Keyboard Escape  BETA VERSION"
+footerText.Te
