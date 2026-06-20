@@ -1,77 +1,113 @@
--- 1 Speed Keyboard для Delta Executor
--- Бро, жми на кнопки и лети!
+--[[
+    Speed Hub | AutoStep + Speed Control
+    by OrvaEvncp (Inspired)
+    Объединённый функционал для Роблокс
+]]
 
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
--- Создаём GUI
+-- Параметры автошага
+local autoStepEnabled = false
+local stepDelay = 0.05
+local VIM = game:GetService("VirtualInputManager")
+
+-- Создаём GUI (похоже на Orva + LuxyHub)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Кнопка Speed 1
-local speed1Btn = Instance.new("TextButton")
-speed1Btn.Size = UDim2.new(0, 80, 0, 40)
-speed1Btn.Position = UDim2.new(0, 10, 0, 100)
-speed1Btn.Text = "Speed 1"
-speed1Btn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-speed1Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-speed1Btn.Parent = screenGui
+-- Основная рамка (тёмная, как у Orva)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 140, 0, 260)
+frame.Position = UDim2.new(0, 10, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
 
-speed1Btn.MouseButton1Click:Connect(function()
-    humanoid.WalkSpeed = 16 -- Стандарт
-end)
+-- Заголовок (оранжевый, как у Orva)
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 25)
+title.Text = "Speed Hub v2"
+title.BackgroundColor3 = Color3.fromRGB(255, 80, 0)
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 14
+title.Parent = frame
 
--- Кнопка Speed 50
-local speed2Btn = Instance.new("TextButton")
-speed2Btn.Size = UDim2.new(0, 80, 0, 40)
-speed2Btn.Position = UDim2.new(0, 10, 0, 150)
-speed2Btn.Text = "Speed 50"
-speed2Btn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-speed2Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-speed2Btn.Parent = screenGui
+-- Функция для создания кнопок
+local function createButton(text, y, color, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -10, 0, 30)
+    btn.Position = UDim2.new(0, 5, 0, y)
+    btn.Text = text
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 12
+    btn.Parent = frame
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
 
-speed2Btn.MouseButton1Click:Connect(function()
-    humanoid.WalkSpeed = 50 -- Быстро
-end)
-
--- Кнопка Speed 100
-local speed3Btn = Instance.new("TextButton")
-speed3Btn.Size = UDim2.new(0, 80, 0, 40)
-speed3Btn.Position = UDim2.new(0, 10, 0, 200)
-speed3Btn.Text = "Speed 100"
-speed3Btn.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-speed3Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-speed3Btn.Parent = screenGui
-
-speed3Btn.MouseButton1Click:Connect(function()
-    humanoid.WalkSpeed = 100 -- Очень быстро
-end)
-
--- Кнопка Speed 500 (УЛЬТРА)
-local speed4Btn = Instance.new("TextButton")
-speed4Btn.Size = UDim2.new(0, 80, 0, 40)
-speed4Btn.Position = UDim2.new(0, 10, 0, 250)
-speed4Btn.Text = "Speed 500"
-speed4Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-speed4Btn.TextColor3 = Color3.fromRGB(0, 0, 0)
-speed4Btn.Parent = screenGui
-
-speed4Btn.MouseButton1Click:Connect(function()
-    humanoid.WalkSpeed = 500 -- Улёт
-end)
-
--- Кнопка Сброс
-local resetBtn = Instance.new("TextButton")
-resetBtn.Size = UDim2.new(0, 80, 0, 40)
-resetBtn.Position = UDim2.new(0, 10, 0, 300)
-resetBtn.Text = "Сброс"
-resetBtn.BackgroundColor3 = Color3.fromRGB(128, 128, 128)
-resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-resetBtn.Parent = screenGui
-
-resetBtn.MouseButton1Click:Connect(function()
+-- 
+createButton("Speed 16", 30, Color3.fromRGB(50, 50, 50), function()
     humanoid.WalkSpeed = 16
+    autoStepEnabled = false
 end)
 
-print("Скрипт 1 Speed Keyboard загружен! Бро, лети!")
+createButton("Speed 50", 60, Color3.fromRGB(0, 150, 0), function()
+    humanoid.WalkSpeed = 50
+    autoStepEnabled = false
+end)
+
+createButton("Speed 100", 90, Color3.fromRGB(0, 100, 200), function()
+    humanoid.WalkSpeed = 100
+    autoStepEnabled = false
+end)
+
+createButton("Speed 200", 120, Color3.fromRGB(200, 200, 0), function()
+    humanoid.WalkSpeed = 200
+    autoStepEnabled = false
+end)
+
+createButton("Speed 500", 150, Color3.fromRGB(200, 0, 0), function()
+    humanoid.WalkSpeed = 500
+    autoStepEnabled = false
+end)
+
+createButton("Reset Speed", 180, Color3.fromRGB(100, 100, 100), function()
+    humanoid.WalkSpeed = 16
+    autoStepEnabled = false
+end)
+
+-- Разделитель
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(1, -10, 0, 1)
+divider.Position = UDim2.new(0, 5, 0, 215)
+divider.BackgroundColor3 = Color3.fromRGB(255, 80, 0)
+divider.Parent = frame
+
+-- Кнопка АВТО-ШАГ (фишка LuxyHub)
+local autoBtn = createButton("AUTO STEP: OFF", 220, Color3.fromRGB(100, 100, 100), function()
+    autoStepEnabled = not autoStepEnabled
+    if autoStepEnabled then
+        autoBtn.Text = "AUTO STEP: ON"
+        autoBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+        -- Запускаем цикл шагов
+        spawn(function()
+            while autoStepEnabled and player.Character do
+                VIM:SendKeyEvent(true, Enum.KeyCode.W, false, game)
+                wait(0.02)
+                VIM:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+                wait(stepDelay)
+            end
+        end)
+    else
+        autoBtn.Text = "AUTO STEP: OFF"
+        autoBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    end
+end)
+
+print("Speed Hub v2 загружен! Orva + LuxyHub стиль.")
