@@ -15,31 +15,15 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 120, 0, 60)
-frame.Position = UDim2.new(0, 10, 0.5, -30)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 20)
-title.Text = "NoClip Hub"
-title.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 12
-title.Parent = frame
-
 local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(1, -10, 0, 25)
-btn.Position = UDim2.new(0, 5, 0, 25)
+btn.Size = UDim2.new(0, 150, 0, 40)
+btn.Position = UDim2.new(0.5, -75, 0.5, -20)
 btn.Text = "NoClip: OFF"
 btn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.Font = Enum.Font.SourceSansBold
-btn.TextSize = 12
-btn.Parent = frame
+btn.TextSize = 14
+btn.Parent = screenGui
 
 btn.MouseButton1Click:Connect(function()
     noclip = not noclip
